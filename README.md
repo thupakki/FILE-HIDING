@@ -44,3 +44,4 @@ Then,
 bih.height:-indicates the height of the bitmap image.
 bih.width:-indicates the width of the bitmap image.
 bih.biXPelsPerMeter:-indicates the size of a file which is hidden in a bitmap.
+bih.biBitCount:-used to check whether the image is 24 bit true color RGB image.
