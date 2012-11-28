@@ -1,13 +1,133 @@
-# Compiled Object files
-*.slo
-*.lo
-*.o
+#include<iostream>
+#include<windows.h>
+using namspace std;
 
-# Compiled Dynamic libraries
-*.so
-*.dylib
 
-# Compiled Static libraries
-*.lai
-*.la
-*.a
+
+//global variables
+
+
+unsigned char *data,*source;                
+
+HANDLE filehandler;                      
+
+DWORD read,written,data_size,file_size;               
+ 
+BITMAPFILEHEADER file_header_bitmap;
+                   
+BITMAPINFOHEADER bih;  
+
+
+
+
+
+
+void insert_into_bitmap(char *bitmapfile,char *actualfile)        // Insert a file into a bitmap
+{
+
+     
+     filehandler = CreateFile(bitmapfile,GENERIC_READ,FILE_SHARE_READ,NULL,OPEN_EXISTING,NULL,NULL);       
+     ReadFile(filehandler,&file_header_bitmap,sizeof(file_header_bitmap),&read,NULL);
+     ReadFile(filehandler,&info_bitmap_file,sizeof(bih),&read,NULL);
+     data = new unsigned char[bih.biHeight*bih.biWidth*3];
+     ReadFile(filehandler,data,bih.biHeight*bih.biWidth*3,&read,NULL);
+     CloseHandle(filehandler);
+                                                                                            
+                                          
+    if(bih.biBitCount != 24)                                                             
+     {
+          cout<<"Only 24-bit RGB bitmap images are allowed.\n";
+          return;
+     }
+
+     
+       cout<<"the bitmap image has a height of "<<bih.biHeight<<endl;
+       cout<<"the bitmap image has a width of "<<bih.biWidth<<endl;
+       data_size = bih.biHeight*bih.biWidth*3;
+       cout<<" data of image is "<<data_size<<" bytes long.\n";              
+   
+       int BitmapCapacity=data_size/4;
+       cout<<"A file of up to "<<BitmapCapacity<<" bytes can be hidden inside.\n";          
+
+     for(DWORD i = 0;i < data_size;i++)                                                  
+     {
+          data[i] /= 4;                                            // Reduce precision for extra data
+          data[i] *= 4;
+     }
+
+     
+     filehandler = CreateFile(actualfile,GENERIC_READ,FILE_SHARE_READ,NULL,OPEN_EXISTING,NULL,NULL);
+     file_size = GetFileSize(filehandler,NULL);                                                     
+     cout<<"Input file has a size of "<<file_size<<" bytes.\n";                             
+     source = new unsigned char[file_size];                    // Allocate and read data
+     ReadFile(filehandler,source,file_size,&read,NULL);
+     CloseHandle(filehandler);                                                                    
+    
+     if(file_size > BitmapCapacity)                                                               
+     {
+          cout<<"File to be inserted doesn't fit in this bitmap!.\n";
+          return;
+     }
+
+                          
+     for(DWORD i = 0;i < file_size;i++)                       // Apply the data to the image
+     {
+          
+          DWORD index = i*4;                                
+                                                           
+          data[index] += source[i]&3;                   
+          data[index++] += (source[i]&12)>>2;            
+          data[index+2] += (source[i]&48)>>4;           
+          data[index+3] += (source[i]&192)>>6;        
+     }
+
+     bih.biXPelsPerMeter = file_size;                  
+     filehandler = CreateFile("outputbitmap.bmp",GENERIC_WRITE,NULL,NULL,CREATE_ALWAYS,FILE_ATTRIBUTE_NORMAL,NULL); 
+     WriteFile(filehandler,&file_header_bitmap,sizeof(file_header_bitmap),&written,NULL);    
+     WriteFile(filehandler,&bih,sizeof(bih),&written,NULL); 
+     WriteFile(filehandler,data,data_size,&written,NULL);      
+     CloseHandle(filehandler);                                 
+}
+
+
+
+void extract_file_from_image(char *bitmapfile,char *actualfile)    //Extract file from bitmap
+{
+         
+     filehandler = CreateFile(bitmap,GENERIC_READ,FILE_SHARE_READ,NULL,OPEN_EXISTING,NULL,NULL); 
+     ReadFile(filehandler,&file_header_bitmap,sizeof(file_header_bitmap),&read,NULL);                                           
+     ReadFile(filehandler,&bih,sizeof(bih),&read,NULL);                                        
+     data = new unsigned char[bih.biHeight*bih.biWidth*3];                          
+     ReadFile(filehandler,data,bih.biHeight*bih.biWidth*3,&read,NULL);                       
+     CloseHandle(filehandler);                                                                
+
+     if(bih.biBitCount != 24)                                                      // Check to see if the bitmap could possibly hold data
+     {
+          cout<<"This image is not a 24-bit RGB bitmap image.\n";
+          return;
+     }
+
+     
+     data_size = bih.biHeight*bih.biWidth*3;
+     file_size = bih.biXPelsPerMeter;
+     cout<<"Image host data is "<<(bih.biHeight*bih.biWidth*3)<<" bytes long.\n";
+     cout<<"It has a height of "<<bih.biHeight<<" and a width of "<<bih.biWidth<<".\n";
+     cout<<"The file inside is "<<file_size<<" bytes long.\n";  
+
+
+     source = new unsigned char[file_size];                          // Allocate data for inside file
+     for(DWORD i = 0;i < file_size;i++)
+     {
+          DWORD index = i*4;                                  // Get base index
+          source[i] = data[index]%4;                          
+          source[i] += (data[index+1]%4)<<2;
+          source[i] += (data[index+2]%4)<<4;
+          source[i] += (data[index+3]%4)<<6;
+     }
+
+     
+     filehandler = CreateFile(filename,GENERIC_WRITE,NULL,NULL,CREATE_ALWAYS,FILE_ATTRIBUTE_NORMAL,NULL); 
+     WriteFile(filehandler,source,file_size,&written,NULL);                                      
+     CloseHandle(filehandler);                    
+}
+
