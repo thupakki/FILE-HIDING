@@ -29,7 +29,7 @@ I used here 9 global variables
 8)data_size:-indicate size of data to be insert into bitmap.It is of type DWORD which is in windows.h.
 9)file_size:-indicates the size of file .It is of type DWORD which is in windows.h.
 
-Inbuit functions used in this program:-
+Inbuilt functions used in this program:-
 
 i)Createfile():- used to create a file or bitmap file.To know their parameters please go to this URL "http://msdn.microsoft.com/en-us/library/windows/desktop/aa363858(v=vs.85).aspx"
 for more details
